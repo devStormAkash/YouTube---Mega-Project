@@ -1,0 +1,16 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "We are creating the backend part of youtube and it is the bigger version of youtube",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "youtube",
+    "backend",
+    "akashtube"
+  ],
+  "author": "Akash Giri",
+  "license": "ISC"
+}
