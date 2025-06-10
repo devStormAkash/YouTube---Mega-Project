@@ -17,9 +17,8 @@ const registerUser = asyncHandler(async (req, res) => {
   // 8. Return the respose
 
   // 1. Take input from the user
-    const { email, username, fullname, password } = req.body;
-    console.log("email",email);
-    
+  const { email, username, fullname, password } = req.body;
+  console.log("email", email);
 
   // 2. Check if any field is empty
   if (
@@ -35,41 +34,77 @@ const registerUser = asyncHandler(async (req, res) => {
     $or: [{ email }, { username }],
   });
   if (user) {
-    throw new ApiError(401, "Error : User is already exist with same email or username");
+    throw new ApiError(
+      401,
+      "Error : User is already exist with same email or username"
+    );
   }
 
   // 4. Upload avatar and Coverimage to cloudinary, check for avatar
   const avatarLocalPath = req.files?.avatar[0].path;
-    const coverImageLocalPath = req.files?.coverImage[0].path;
-    
-    if(!avatarLocalPath) throw new ApiError(406,"Avatar file is required")
+  // check if coverimage present or not , if present then only take the cover image
+  let coverImageLocalPath;
+  if (req.files.coverImage) coverImageLocalPath = req.files.coverImage[0].path;
+  else coverImageLocalPath = "";
+
+  // check if avatar path is loaded successfully
+  if (!avatarLocalPath) throw new ApiError(406, "Avatar file is required");
+
+  // upload avatar on cloudinary
   const avatarResponse = await uploadOnCloudinary(avatarLocalPath);
-  const coverImageResponse = await uploadOnCloudinary(coverImageLocalPath);
+
+  // upload coverimage on cloudinary
+
+  let coverImageResponse = null;
+  if (coverImageLocalPath) {
+    coverImageResponse = await uploadOnCloudinary(coverImageLocalPath);
+  }
   if (!avatarResponse)
     throw new ApiError(500, "Failed to Upload the avatar image");
 
+    
+    
   // 5. create an user object and save it to thje database
   const userObject = await User.create({
     fullname,
     email,
     password,
-    username:username.toLowerCase(),
+    username: username.toLowerCase(),
     avatar: avatarResponse.url,
-    coverImage: coverImageResponse?.url || "",
+    coverImage: coverImageResponse === null ? "" : coverImageResponse.url,
   });
+    
+    
+    
   // 6. REMOVE THE PASSWORD and REFRESH TOKEN field from thne respose
   const verifiedUserObject = await User.findById(userObject._id).select(
     "-password -refreshtoken"
-  );
+    );
+    
+
+
   // 7. Check for the user object is created or not
   if (!verifiedUserObject)
-    throw new ApiError(500, "Failed to save the data in database at the time of registering");
+    throw new ApiError(
+      500,
+      "Failed to save the data in database at the time of registering"
+    );
 
-    // 8. Return the respose
-    
-    return res.status(200).json(
-        new ApiResponse(201,verifiedUserObject,"New User Registered successfully")
-    )
+
+console.log(req.body);
+
+
+  // 8. Return the respose
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        201,
+        verifiedUserObject,
+        "New User Registered successfully"
+      )
+    );
 })
 
 export { registerUser };
