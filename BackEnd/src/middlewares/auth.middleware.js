@@ -6,14 +6,19 @@ import jwt from "jsonwebtoken"
 const verifyJWT = asyncHandler(async (req, _, next) => {
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
-        if (!token) {
-            throw new ApiError(401, "Unauthorized access")
+        if (!token || typeof token !== "string") {
+          throw new ApiError(
+            401,
+            "Unauthorized access: Token missing or invalid"
+          );
         }
         const decodedPayload = jwt.verify(
           token,
           process.env.ACCESS_TOKEN_SECRET
         );
-        const user = await User.findOne(decodedPayload._id).select("-password -refreshtoken")
+        const user = await User.findOne({ _id: decodedPayload._id }).select(
+          "-password -refreshtoken"
+        );
     
         if (!user) {
           throw new ApiError(401, "Invalid access token");
